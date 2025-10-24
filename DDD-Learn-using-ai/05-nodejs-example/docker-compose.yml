@@ -1,0 +1,361 @@
+# Complete E-commerce Microservices System
+# Demonstrates DDD principles in a distributed architecture
+
+version: '3.8'
+
+services:
+  # API Gateway - Single entry point
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - ORDER_SERVICE_URL=http://order-service:3000
+      - CATALOG_SERVICE_URL=http://catalog-service:3000
+      - INVENTORY_SERVICE_URL=http://inventory-service:3000
+      - IDENTITY_SERVICE_URL=http://identity-service:3000
+      - PAYMENT_SERVICE_URL=http://payment-service:3000
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - order-service
+      - catalog-service
+      - inventory-service
+      - identity-service
+      - payment-service
+      - redis
+    networks:
+      - microservices-network
+
+  # Identity Service - User management bounded context
+  identity-service:
+    build: ./microservices/identity-service
+    ports:
+      - "3001:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://identity_user:identity_pass@identity-db:5432/identity_db
+      - JWT_SECRET=your-jwt-secret-key
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - identity-db
+      - redis
+      - rabbitmq
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/identity-service:/app
+      - /app/node_modules
+
+  # Catalog Service - Product catalog bounded context
+  catalog-service:
+    build: ./microservices/catalog-service
+    ports:
+      - "3002:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://catalog_user:catalog_pass@catalog-db:5432/catalog_db
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - catalog-db
+      - elasticsearch
+      - redis
+      - rabbitmq
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/catalog-service:/app
+      - /app/node_modules
+
+  # Inventory Service - Stock management bounded context
+  inventory-service:
+    build: ./microservices/inventory-service
+    ports:
+      - "3003:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://inventory_user:inventory_pass@inventory-db:5432/inventory_db
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - inventory-db
+      - redis
+      - rabbitmq
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/inventory-service:/app
+      - /app/node_modules
+
+  # Order Service - Order processing bounded context
+  order-service:
+    build: ./microservices/order-service
+    ports:
+      - "3004:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://order_user:order_pass@order-db:5432/order_db
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - CATALOG_SERVICE_URL=http://catalog-service:3000
+      - INVENTORY_SERVICE_URL=http://inventory-service:3000
+      - PAYMENT_SERVICE_URL=http://payment-service:3000
+      - IDENTITY_SERVICE_URL=http://identity-service:3000
+    depends_on:
+      - order-db
+      - redis
+      - rabbitmq
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/order-service:/app
+      - /app/node_modules
+
+  # Payment Service - Payment processing bounded context
+  payment-service:
+    build: ./microservices/payment-service
+    ports:
+      - "3005:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://payment_user:payment_pass@payment-db:5432/payment_db
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - STRIPE_SECRET_KEY=sk_test_your_stripe_key
+    depends_on:
+      - payment-db
+      - redis
+      - rabbitmq
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/payment-service:/app
+      - /app/node_modules
+
+  # Notification Service - Communication bounded context
+  notification-service:
+    build: ./microservices/notification-service
+    ports:
+      - "3006:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://notification_user:notification_pass@notification-db:5432/notification_db
+      - REDIS_URL=redis://redis:6379
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_USER=your-email@gmail.com
+      - SMTP_PASS=your-app-password
+    depends_on:
+      - notification-db
+      - redis
+      - rabbitmq
+    networks:
+      - microservices-network
+    volumes:
+      - ./microservices/notification-service:/app
+      - /app/node_modules
+
+  # Databases - Each service has its own database (Database per Service pattern)
+  identity-db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=identity_db
+      - POSTGRES_USER=identity_user
+      - POSTGRES_PASSWORD=identity_pass
+    volumes:
+      - identity-db-data:/var/lib/postgresql/data
+      - ./infrastructure/databases/identity/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+
+  catalog-db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=catalog_db
+      - POSTGRES_USER=catalog_user
+      - POSTGRES_PASSWORD=catalog_pass
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+      - ./infrastructure/databases/catalog/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+
+  inventory-db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=inventory_db
+      - POSTGRES_USER=inventory_user
+      - POSTGRES_PASSWORD=inventory_pass
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+      - ./infrastructure/databases/inventory/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+
+  order-db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=order_db
+      - POSTGRES_USER=order_user
+      - POSTGRES_PASSWORD=order_pass
+    volumes:
+      - order-db-data:/var/lib/postgresql/data
+      - ./infrastructure/databases/order/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+
+  payment-db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=payment_db
+      - POSTGRES_USER=payment_user
+      - POSTGRES_PASSWORD=payment_pass
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+      - ./infrastructure/databases/payment/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+
+  notification-db:
+    image: postgres:14
+    environment:
+      - POSTGRES_DB=notification_db
+      - POSTGRES_USER=notification_user
+      - POSTGRES_PASSWORD=notification_pass
+    volumes:
+      - notification-db-data:/var/lib/postgresql/data
+      - ./infrastructure/databases/notification/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - microservices-network
+
+  # Infrastructure Services
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - microservices-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin123
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - microservices-network
+
+  elasticsearch:
+    image: elasticsearch:8.5.0
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    networks:
+      - microservices-network
+
+  # Monitoring and Observability
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infrastructure/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - microservices-network
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./infrastructure/monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./infrastructure/monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+    networks:
+      - microservices-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - microservices-network
+
+  # Log aggregation
+  elasticsearch-logs:
+    image: elasticsearch:8.5.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
+    volumes:
+      - elasticsearch-logs-data:/usr/share/elasticsearch/data
+    networks:
+      - microservices-network
+
+  kibana:
+    image: kibana:8.5.0
+    ports:
+      - "5601:5601"
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch-logs:9200
+    depends_on:
+      - elasticsearch-logs
+    networks:
+      - microservices-network
+
+  logstash:
+    image: logstash:8.5.0
+    volumes:
+      - ./infrastructure/logging/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    depends_on:
+      - elasticsearch-logs
+    networks:
+      - microservices-network
+
+volumes:
+  identity-db-data:
+  catalog-db-data:
+  inventory-db-data:
+  order-db-data:
+  payment-db-data:
+  notification-db-data:
+  redis-data:
+  rabbitmq-data:
+  elasticsearch-data:
+  elasticsearch-logs-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  microservices-network:
+    driver: bridge
