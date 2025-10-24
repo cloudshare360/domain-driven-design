@@ -5,17 +5,51 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
 [![DDD](https://img.shields.io/badge/DDD-Domain%20Driven%20Design-blue.svg)](https://domainlanguage.com/)
+[![Microservices](https://img.shields.io/badge/Architecture-Microservices-orange.svg)](https://microservices.io/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
+[![Kubernetes](https://img.shields.io/badge/K8s-Deployment-326CE5.svg)](https://kubernetes.io/)
+
+---
+
+## 📖 Table of Contents
+
+- [What You'll Learn](#-what-youll-learn)
+- [Learning Path](#-learning-path)
+- [Quick Start](#-quick-start)
+- [Architecture Overview](#️-architecture-overview)
+- [Prerequisites](#-prerequisites)
+- [Technology Stack](#️-technology-stack)
+- [Project Structure](#-project-structure)
+- [Key Features](#-key-features)
+- [Learning Outcomes](#-learning-outcomes)
+- [Success Metrics](#-success-metrics)
+- [Support & Community](#-support--community)
+- [Contributing](#-contributing)
+- [License](#-license)
 
 ## 🎯 What You'll Learn
 
-This comprehensive guide takes you from DDD fundamentals to building production-ready microservices:
+This comprehensive guide transforms you from DDD beginner to microservices expert through practical, hands-on learning:
 
-- **Strategic & Tactical DDD Patterns**: Bounded contexts, aggregates, entities, value objects
-- **Problem-to-Solution Mapping**: Transform business requirements into domain models
+### 🎓 Core Knowledge
+- **Strategic DDD**: Bounded contexts, context mapping, ubiquitous language
+- **Tactical DDD**: Entities, value objects, aggregates, repositories, domain services
+- **Domain Modeling**: Transform complex business requirements into clean code
+- **Event-Driven Architecture**: Domain events, event sourcing, CQRS patterns
+
+### 🏗️ Practical Skills
 - **Monolith Decomposition**: Extract microservices using DDD principles
-- **Microservice Patterns**: Saga, CQRS, Event Sourcing, Anti-Corruption Layer
-- **Real Node.js Implementation**: Complete e-commerce system with working code
-- **Production Deployment**: Docker, Kubernetes, monitoring, and observability
+- **Microservice Patterns**: Saga, Anti-Corruption Layer, Transactional Outbox
+- **Production Deployment**: Docker, Kubernetes, monitoring, observability
+- **Performance Optimization**: Caching, database optimization, load testing
+
+### 💼 Business Value
+- **Technical Leadership**: Make informed architectural decisions
+- **Team Collaboration**: Bridge business and technical stakeholders
+- **Problem Solving**: Model complex domains with confidence
+- **Interview Readiness**: Excel in system design interviews
+
+---
 
 ## 📚 Learning Path
 
